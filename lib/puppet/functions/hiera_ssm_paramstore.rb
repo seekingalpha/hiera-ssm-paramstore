@@ -12,6 +12,18 @@ Puppet::Functions.create_function(:hiera_ssm_paramstore) do
   end
 
   def lookup_key(key, options, context)
+    if options['key_prefixes']
+      matched_prefix = nil
+      options['key_prefixes'].each do |prefix|
+        matched_prefix = prefix if key.start_with?(prefix)
+        break if matched_prefix
+      end
+
+      return context.not_found unless matched_prefix
+
+      key = key.sub(matched_prefix, '')
+    end
+
     key_path = context.interpolate(options['uri'] + key.gsub('::', '/'))
 
     # Searches for key and key path due to ssm return just the key for keys on the root path (/)
